@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Punto de venta – AutoPartes El Alto</title>
+<style>
+:root{
+  --bg:#eef0ee; --panel:#ffffff; --ink:#1d2328; --muted:#5b666e; --line:#d5dad7;
+  --brand:#1d4e89; --brand-ink:#ffffff; --warn:#c2410c; --warn-bg:#fff0e6;
+  --ok:#2e7d5b; --ok-bg:#e6f4ec; --out:#a11d2e; --out-bg:#fbe9eb;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Segoe UI",system-ui,-apple-system,Roboto,sans-serif}
+header{background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:space-between;padding:10px 20px;gap:12px;flex-wrap:wrap}
+header h1{font-size:18px;margin:0;font-weight:600}
+header .user{font-size:13px;opacity:.85}
+.layout{display:grid;grid-template-columns:1fr 360px;gap:16px;padding:16px;max-width:1280px;margin:0 auto}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px}
+.panel h2{font-size:15px;margin:0;padding:12px 16px;border-bottom:1px solid var(--line);font-weight:600}
+.search{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line)}
+.search input{flex:1;font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:4px}
+.search input:focus,button:focus-visible,select:focus-visible{outline:3px solid #7aa7d9;outline-offset:1px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:9px 16px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+th{font-size:12.5px;color:var(--muted);font-weight:600;background:#f7f8f7}
+td.num,th.num{text-align:right}
+.tag{display:inline-block;padding:2px 8px;border-radius:10px;font-size:12.5px;font-weight:600}
+.tag.ok{background:var(--ok-bg);color:var(--ok)}
+.tag.low{background:var(--warn-bg);color:var(--warn)}
+.tag.out{background:var(--out-bg);color:var(--out)}
+button{font:inherit;cursor:pointer;border-radius:4px;border:1px solid var(--line);background:#fff;padding:6px 12px}
+button.primary{background:var(--brand);color:var(--brand-ink);border-color:var(--brand);font-weight:600;padding:11px 14px;width:100%}
+button.primary:disabled{opacity:.45;cursor:not-allowed}
+button.add{background:var(--brand);color:#fff;border-color:var(--brand)}
+button.add:disabled{background:#c9cfcc;border-color:#c9cfcc;cursor:not-allowed}
+.cart-empty{padding:28px 16px;color:var(--muted);text-align:center}
+.cart-item{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:10px 16px;border-bottom:1px solid var(--line)}
+.cart-item .name{font-weight:600}
+.cart-item .sub{color:var(--muted);font-size:13px}
+.qty{display:flex;align-items:center;gap:6px}
+.qty button{padding:2px 9px}
+.totals{padding:14px 16px;display:grid;gap:10px}
+.total-row{display:flex;justify-content:space-between;align-items:baseline}
+.total-row strong{font-size:26px;font-variant-numeric:tabular-nums}
+select{font:inherit;padding:8px;border:1px solid var(--line);border-radius:4px;width:100%}
+.alerts{margin:16px;margin-top:0}
+.alert-box{border:1px solid #f0b48a;background:var(--warn-bg);border-radius:6px;padding:10px 14px;font-size:14px}
+.alert-box b{color:var(--warn)}
+.alert-box ul{margin:6px 0 0;padding-left:18px}
+.alert-ok{border-color:#a8d5bd;background:var(--ok-bg)}
+#toast{position:fixed;right:16px;bottom:16px;display:grid;gap:8px;z-index:5}
+.toast{background:var(--ink);color:#fff;padding:10px 14px;border-radius:6px;max-width:320px;border-left:5px solid var(--ok)}
+.toast.warn{border-left-color:#f59e0b}
+.toast.err{border-left-color:#ef4444}
+dialog{border:1px solid var(--line);border-radius:6px;padding:0;max-width:340px;width:92%}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.ticket{padding:18px;font-family:"Consolas","Courier New",monospace;font-size:13px}
+.ticket h3{margin:0 0 4px;text-align:center;font-family:inherit}
+.ticket .c{text-align:center;color:var(--muted)}
+.ticket hr{border:0;border-top:1px dashed #999;margin:10px 0}
+.ticket .row{display:flex;justify-content:space-between;gap:8px}
+.dlg-actions{display:flex;gap:8px;padding:0 18px 18px}
+.dlg-actions button{flex:1}
+@media (max-width:900px){.layout{grid-template-columns:1fr}}
+@media print{body *{visibility:hidden}.ticket,.ticket *{visibility:visible}dialog{position:absolute;left:0;top:0;border:0}}
+</style>
+</head>
+<body>
+<header>
+  <h1>AutoPartes El Alto · Punto de venta</h1>
+  <span class="user">Sesión: Laura Ríos (Vendedor)</span>
+</header>
+
+<main class="layout">
+  <section class="panel" aria-label="Catálogo">
+    <h2>Consultar disponibilidad y precio</h2>
+    <div class="search">
+      <input id="q" type="search" placeholder="Buscar por nombre o escanear código de barras" autocomplete="off" aria-label="Buscar repuesto">
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Código</th><th>Repuesto</th><th class="num">Precio (Bs)</th><th class="num">Stock</th><th>Estado</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <div id="alerts" class="alerts" style="margin-top:16px"></div>
+  </section>
+
+  <aside class="panel" aria-label="Venta actual">
+    <h2>Venta actual</h2>
+    <div id="cart"></div>
+    <div class="totals">
+      <div class="total-row"><span>Total a cobrar</span><strong id="total">Bs 0,00</strong></div>
+      <label>Método de pago
+        <select id="pay"><option>Efectivo</option><option>QR</option><option>Transferencia</option></select>
+      </label>
+      <button id="checkout" class="primary" disabled>Registrar venta</button>
+      <button id="clear" type="button">Vaciar venta</button>
+    </div>
+  </aside>
+</main>
+
+<div id="toast" aria-live="polite"></div>
+
+<dialog id="dlg">
+  <div class="ticket" id="ticket"></div>
+  <div class="dlg-actions">
+    <button id="print" class="add">Imprimir comprobante</button>
+    <button id="close">Cerrar</button>
+  </div>
+</dialog>
+
+<script>
+// Datos de ejemplo (en el sistema real vienen de la API Django: GET /api/productos/)
+const products = [
+  {code:"7750101", name:"Filtro de aceite Toyota",       price:35,  stock:14, min:5},
+  {code:"7750102", name:"Pastillas de freno delanteras", price:180, stock:6,  min:6},
+  {code:"7750103", name:"Bujía NGK (unidad)",            price:28,  stock:3,  min:8},
+  {code:"7750104", name:"Filtro de aire Suzuki",         price:45,  stock:10, min:4},
+  {code:"7750105", name:"Amortiguador trasero",          price:320, stock:4,  min:2},
+  {code:"7750106", name:"Aceite 20W50 (litro)",          price:42,  stock:30, min:10},
+  {code:"7750107", name:"Correa de distribución",        price:210, stock:0,  min:3},
+  {code:"7750108", name:"Batería 12V 45Ah",              price:690, stock:5,  min:2}
+];
+const cart = {};          // code -> cantidad
+let lastSale = 0;
+
+const $ = id => document.getElementById(id);
+const bs = n => "Bs " + n.toLocaleString("es-BO",{minimumFractionDigits:2,maximumFractionDigits:2});
+const byCode = c => products.find(p => p.code === c);
+const state = p => p.stock === 0 ? "out" : p.stock <= p.min ? "low" : "ok";
+const label = {ok:"Disponible", low:"Stock bajo", out:"Agotado"};
+
+function toast(msg, kind=""){
+  const t = document.createElement("div");
+  t.className = "toast " + kind; t.textContent = msg;
+  $("toast").appendChild(t); setTimeout(() => t.remove(), 4200);
+}
+
+function renderRows(){
+  const q = $("q").value.trim().toLowerCase();
+  const list = products.filter(p => p.name.toLowerCase().includes(q) || p.code.includes(q));
+  $("rows").innerHTML = list.length ? list.map(p => {
+    const inCart = cart[p.code] || 0;
+    return `<tr>
+      <td>${p.code}</td><td>${p.name}</td>
+      <td class="num">${p.price.toFixed(2)}</td><td class="num">${p.stock}</td>
+      <td><span class="tag ${state(p)}">${label[state(p)]}</span></td>
+      <td><button class="add" data-add="${p.code}" ${p.stock - inCart <= 0 ? "disabled" : ""}>Agregar</button></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="6" class="cart-empty">No hay repuestos con “${$("q").value}”. Revisa el nombre o el código.</td></tr>`;
+}
+
+function renderCart(){
+  const items = Object.entries(cart);
+  $("cart").innerHTML = items.length ? items.map(([c,q]) => {
+    const p = byCode(c);
+    return `<div class="cart-item">
+      <span class="name">${p.name}</span><span>${bs(p.price*q)}</span>
+      <span class="sub">${bs(p.price)} c/u</span>
+      <span class="qty"><button data-dec="${c}" aria-label="Quitar uno">−</button><b>${q}</b><button data-inc="${c}" aria-label="Agregar uno">+</button><button data-del="${c}" aria-label="Eliminar">✕</button></span>
+    </div>`;
+  }).join("") : `<div class="cart-empty">Aún no hay repuestos en la venta. Busca uno y presiona “Agregar”.</div>`;
+  const total = items.reduce((s,[c,q]) => s + byCode(c).price*q, 0);
+  $("total").textContent = bs(total);
+  $("checkout").disabled = !items.length;
+}
+
+function renderAlerts(){
+  const low = products.filter(p => p.stock <= p.min);
+  $("alerts").innerHTML = low.length
+    ? `<div class="alert-box"><b>Alerta de stock mínimo</b> (${low.length} repuestos por reponer)<ul>${low.map(p => `<li>${p.name}: quedan ${p.stock}, mínimo ${p.min}</li>`).join("")}</ul></div>`
+    : `<div class="alert-box alert-ok">Todos los repuestos están sobre su stock mínimo.</div>`;
+}
+
+function add(code){
+  const p = byCode(code), inCart = cart[code] || 0;
+  if (p.stock - inCart <= 0){ toast(`No hay más unidades de ${p.name}.`, "err"); return; }
+  cart[code] = inCart + 1; refresh();
+}
+function refresh(){ renderRows(); renderCart(); renderAlerts(); }
+
+$("q").addEventListener("input", renderRows);
+$("q").addEventListener("keydown", e => {            // el lector de códigos de barras envía el código + Enter
+  if (e.key === "Enter"){
+    const p = byCode($("q").value.trim());
+    if (p){ add(p.code); $("q").value = ""; renderRows(); } else toast("Código no encontrado.", "err");
+  }
+});
+document.addEventListener("click", e => {
+  const t = e.target;
+  if (t.dataset.add) add(t.dataset.add);
+  if (t.dataset.inc) add(t.dataset.inc);
+  if (t.dataset.dec){ if (--cart[t.dataset.dec] <= 0) delete cart[t.dataset.dec]; refresh(); }
+  if (t.dataset.del){ delete cart[t.dataset.del]; refresh(); }
+});
+$("clear").onclick = () => { Object.keys(cart).forEach(k => delete cart[k]); refresh(); };
+
+$("checkout").onclick = () => {
+  const items = Object.entries(cart); if (!items.length) return;
+  let total = 0, lines = [];
+  items.forEach(([c,q]) => {                         // CU-04: verificar y descontar stock
+    const p = byCode(c); p.stock -= q; total += p.price*q;
+    lines.push(`<div class="row"><span>${q} x ${p.name}</span><span>${(p.price*q).toFixed(2)}</span></div>`);
+    if (p.stock === 0) toast(`${p.name} se agotó.`, "err");           // CU-06: alerta de stock mínimo
+    else if (p.stock <= p.min) toast(`Stock bajo: ${p.name} (quedan ${p.stock}, mínimo ${p.min}).`, "warn");
+  });
+  lastSale++;
+  $("ticket").innerHTML = `<h3>AutoPartes El Alto</h3><div class="c">Río Seco, Av. Juan Pablo II</div><hr>
+    <div class="row"><span>Venta N.º ${String(lastSale).padStart(4,"0")}</span><span>${new Date().toLocaleDateString("es-BO")}</span></div>
+    <div class="row"><span>Vendedor: Laura Ríos</span><span>${$("pay").value}</span></div><hr>
+    ${lines.join("")}<hr><div class="row"><b>TOTAL</b><b>${bs(total)}</b></div>`;
+  Object.keys(cart).forEach(k => delete cart[k]);
+  refresh(); toast("Venta registrada y stock actualizado.");
+  $("dlg").showModal();
+};
+$("close").onclick = () => $("dlg").close();
+$("print").onclick = () => window.print();
+
+refresh();
+</script>
+</body>
+</html>
